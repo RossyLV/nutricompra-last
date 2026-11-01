@@ -5,6 +5,7 @@ import { mockProductPrices } from '@/data/mock-prices'
 import { mockUser } from '@/data/mock-users'
 import { buildShoppingList } from '@/lib/shopping'
 import type {
+  CatalogFood,
   Food,
   Household,
   ProductPrice,
@@ -49,4 +50,22 @@ export async function getProductPrices(): Promise<ProductPrice[]> {
 
 export async function getShoppingList(): Promise<ShoppingList> {
   return clone(buildShoppingList(mockWeekPlan))
+}
+
+/**
+ * Catálogo de alimentos TPCA con su información nutricional, servido por el
+ * backend NestJS. Es la primera función que ya no usa datos de prueba.
+ */
+export async function getCatalogFoods(): Promise<CatalogFood[]> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  if (!apiUrl) {
+    throw new Error('Falta NEXT_PUBLIC_API_URL: defínela en .env.local (ver .env.example)')
+  }
+  // 15 s cubre el primer arranque del backend y de Neon; si se pasa,
+  // la pantalla muestra el error en lugar de quedarse cargando.
+  const response = await fetch(`${apiUrl}/foods`, { signal: AbortSignal.timeout(15_000) })
+  if (!response.ok) {
+    throw new Error(`GET /foods respondió ${response.status}`)
+  }
+  return response.json()
 }

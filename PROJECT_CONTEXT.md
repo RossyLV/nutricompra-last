@@ -103,7 +103,6 @@ Future AI/ML should be an independent service, potentially using Python/FastAPI.
 - Reuse existing types, mock data, hooks, services, stores and business logic.
 - Do NOT duplicate business logic.
 - Do NOT create alternative versions of existing services.
-- Do NOT introduce a real backend yet.
 - Do NOT implement real AI yet.
 - Mock data is intentional for the current MVP.
 - Keep UI, business logic and data access separated.

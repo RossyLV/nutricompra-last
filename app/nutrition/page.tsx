@@ -1,15 +1,15 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Apple, Beef, Carrot, ChevronRight, CircleDot, Fish, Menu, Search, Wheat } from 'lucide-react'
+import { Apple, Beef, Carrot, ChevronRight, CircleDot, Egg, Fish, Menu, Search, Wheat, type LucideIcon } from 'lucide-react'
 import { AppSidebar } from '@/components/app/app-sidebar'
 import { Button } from '@/components/ui/button'
-import { mockFoods, foodCategoryLabels } from '@/data/mock-foods'
 import { mockMeals } from '@/data/mock-meals'
 import { mealTypeLabels } from '@/data/mock-plan'
+import { useCatalogFoods } from '@/hooks/use-catalog-foods'
 import { usePlan } from '@/hooks/use-plan'
 import { dayNutrition } from '@/lib/nutrition'
-import type { Food, Meal, Nutrition } from '@/types'
+import type { CatalogFood, Meal } from '@/types'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -21,47 +21,79 @@ const nutritionItems = [
   { key: 'fiber', label: 'Fibra', unit: 'g', color: 'bg-orange-500' },
 ] as const
 
-const categoryIcons = {
-  cereales: Wheat,
-  legumbres: CircleDot,
-  carnes: Beef,
-  frutas: Apple,
-  verduras: Carrot,
-  lacteos: CircleDot,
-  otros: Fish,
-} as const
+/** Valores de la grilla; `null` = la fuente no reporta el dato (nunca 0). */
+type NutritionValues = Record<(typeof nutritionItems)[number]['key'], number | null>
 
-function NutritionGrid({ nutrition }: { nutrition: Nutrition }) {
+/**
+ * Íconos para las categorías TPCA; las que no tienen uno propio usan el
+ * genérico. Es un Map porque la categoría es texto libre de la base: en un
+ * objeto, nombres como "constructor" devolverían algo que no es un ícono.
+ */
+const categoryIcons = new Map<string, LucideIcon>([
+  ['Cereales', Wheat],
+  ['Legumbres', CircleDot],
+  ['Carnes', Beef],
+  ['Frutas', Apple],
+  ['Verduras', Carrot],
+  ['Lácteos', CircleDot],
+  ['Pescados', Fish],
+  ['Huevos', Egg],
+])
+
+/** Respuesta inmediata al presionar, sin animación si el sistema pide reducir movimiento. */
+const pressableClass =
+  'transition-[transform,background-color,border-color] duration-100 ease-out active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+
+function catalogNutritionValues(food: CatalogFood): NutritionValues {
+  return {
+    calories: food.nutrients.energyKcal,
+    protein: food.nutrients.proteinG,
+    carbs: food.nutrients.carbohydrateG,
+    fats: food.nutrients.fatG,
+    fiber: food.nutrients.fiberG,
+  }
+}
+
+function NutritionGrid({ nutrition }: { nutrition: NutritionValues }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-      {nutritionItems.map((item) => (
-        <div key={item.key} className="rounded-xl bg-muted/50 p-3">
-          <div className="mb-2 flex items-center gap-2">
-            <span className={`size-2 rounded-full ${item.color}`} aria-hidden="true" />
-            <span className="text-xs text-muted-foreground">{item.label}</span>
+      {nutritionItems.map((item) => {
+        const value = nutrition[item.key]
+        return (
+          <div key={item.key} className="rounded-xl bg-muted/50 p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <span className={`size-2 rounded-full ${item.color}`} aria-hidden="true" />
+              <span className="text-xs text-muted-foreground">{item.label}</span>
+            </div>
+            <p className="text-lg font-semibold tracking-tight tabular-nums">
+              {value === null ? (
+                <span className="text-sm font-medium tracking-normal text-muted-foreground">Sin dato</span>
+              ) : (
+                <>
+                  {Math.round(value * 10) / 10} <span className="text-xs font-normal text-muted-foreground">{item.unit}</span>
+                </>
+              )}
+            </p>
           </div>
-          <p className="text-lg font-semibold tracking-tight">
-            {Math.round(nutrition[item.key] * 10) / 10} <span className="text-xs font-normal text-muted-foreground">{item.unit}</span>
-          </p>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
 
-function FoodResult({ food, selected, onSelect }: { food: Food; selected: boolean; onSelect: () => void }) {
-  const Icon = categoryIcons[food.category]
+function FoodResult({ food, selected, onSelect }: { food: CatalogFood; selected: boolean; onSelect: () => void }) {
+  const Icon = categoryIcons.get(food.category) ?? CircleDot
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors hover:bg-muted/60 ${selected ? 'border-primary bg-primary/5' : 'border-border/70'}`}
+      className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left hover:bg-muted/60 ${pressableClass} ${selected ? 'border-primary bg-primary/5' : 'border-border/70'}`}
       aria-pressed={selected}
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon data-icon="inline-start" /></span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium">{food.name}</span>
-        <span className="block text-xs text-muted-foreground">{foodCategoryLabels[food.category]} · por 100 g</span>
+        <span className="block text-xs text-muted-foreground">{food.category} · por {food.referenceAmount} {food.referenceUnit}</span>
       </span>
       <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
     </button>
@@ -73,7 +105,7 @@ function MealResult({ meal, selected, onSelect }: { meal: Meal; selected: boolea
     <button
       type="button"
       onClick={onSelect}
-      className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors hover:bg-muted/60 ${selected ? 'border-primary bg-primary/5' : 'border-border/70'}`}
+      className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left hover:bg-muted/60 ${pressableClass} ${selected ? 'border-primary bg-primary/5' : 'border-border/70'}`}
       aria-pressed={selected}
     >
       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground"><Apple data-icon="inline-start" /></span>
@@ -88,20 +120,23 @@ function MealResult({ meal, selected, onSelect }: { meal: Meal; selected: boolea
 
 export default function NutritionPage() {
   const { plan } = usePlan()
+  const catalog = useCatalogFoods()
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState('arroz-pollo')
   const [selectedKind, setSelectedKind] = useState<'food' | 'meal'>('meal')
 
+  const catalogFoods = useMemo(() => (catalog.status === 'ready' ? catalog.foods : []), [catalog])
+
   const results = useMemo(() => {
     const normalized = query.trim().toLowerCase()
-    const foods = mockFoods.filter((food) => !normalized || food.name.toLowerCase().includes(normalized))
+    const foods = catalogFoods.filter((food) => !normalized || food.name.toLowerCase().includes(normalized))
     const meals = mockMeals.filter((meal) => !normalized || meal.name.toLowerCase().includes(normalized))
     return { foods, meals }
-  }, [query])
+  }, [query, catalogFoods])
 
-  const selectedFood = selectedKind === 'food' ? mockFoods.find((food) => food.id === selectedId) : undefined
+  const selectedFood = selectedKind === 'food' ? catalogFoods.find((food) => food.id === selectedId) : undefined
   const selectedMeal = selectedKind === 'meal' ? mockMeals.find((meal) => meal.id === selectedId) : undefined
-  const selectedNutrition = selectedFood?.nutrition ?? selectedMeal?.nutrition
+  const selectedNutrition = selectedFood ? catalogNutritionValues(selectedFood) : selectedMeal?.nutrition
   const weeklyAverage = useMemo(() => {
     const total = plan.days.reduce((acc, day) => ({
       calories: acc.calories + dayNutrition(day).calories,
@@ -148,9 +183,13 @@ export default function NutritionPage() {
             </div>
           </CardHeader>
           <CardContent className="flex max-h-[520px] flex-col gap-5 overflow-y-auto">
-            <section aria-labelledby="foods-heading">
-              <h2 id="foods-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alimentos ({results.foods.length})</h2>
-              <div className="flex flex-col gap-2">{results.foods.map((food) => <FoodResult key={food.id} food={food} selected={selectedKind === 'food' && selectedId === food.id} onSelect={() => { setSelectedKind('food'); setSelectedId(food.id) }} />)}</div>
+            <section aria-labelledby="foods-heading" aria-busy={catalog.status === 'loading'}>
+              <h2 id="foods-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alimentos{catalog.status === 'ready' ? ` (${results.foods.length})` : ''}</h2>
+              {/* Región viva que existe desde el inicio: los lectores de pantalla anuncian cuando su texto cambia. */}
+              <p role="status" className="sr-only">{catalog.status === 'loading' ? 'Cargando alimentos…' : catalog.status === 'ready' ? `${catalogFoods.length} alimentos disponibles` : ''}</p>
+              {catalog.status === 'loading' && <p aria-hidden="true" className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Cargando alimentos…</p>}
+              {catalog.status === 'error' && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">No se pudieron cargar los alimentos</p>}
+              {catalog.status === 'ready' && <div className="flex flex-col gap-2">{results.foods.map((food) => <FoodResult key={food.id} food={food} selected={selectedKind === 'food' && selectedId === food.id} onSelect={() => { setSelectedKind('food'); setSelectedId(food.id) }} />)}</div>}
             </section>
             <section aria-labelledby="meals-heading">
               <h2 id="meals-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Comidas ({results.meals.length})</h2>
@@ -162,7 +201,7 @@ export default function NutritionPage() {
         <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <CardDescription>{selectedFood ? `${foodCategoryLabels[selectedFood.category]} · referencia por 100 g` : 'Comida completa · porción individual'}</CardDescription>
+              <CardDescription>{selectedFood ? `${selectedFood.category} · referencia por ${selectedFood.referenceAmount} ${selectedFood.referenceUnit}` : 'Comida completa · porción individual'}</CardDescription>
               <CardTitle className="text-2xl">{selectedFood?.name ?? selectedMeal?.name ?? 'Selecciona una opción'}</CardTitle>
             </CardHeader>
             <CardContent>{selectedNutrition ? <NutritionGrid nutrition={selectedNutrition} /> : <p className="text-muted-foreground">Selecciona un alimento o comida para ver sus datos.</p>}</CardContent>

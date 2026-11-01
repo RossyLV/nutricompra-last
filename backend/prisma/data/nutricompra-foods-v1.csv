@@ -1,0 +1,79 @@
+id,name,category,type,reference_amount,reference_unit,energy_kcal,protein_g,carbohydrate_g,fat_g,fiber_g,sodium_mg,calcium_mg,iron_mg,source,source_version,source_code,source_name
+1,Kiwicha,Cereales,basic,100,g,351,12.8,69.1,6.6,9.3,,236,7.32,TPCA,2023,A1,"Kiwicha, achita o achis o amaranto"
+2,Arroz blanco,Cereales,basic,100,g,358,7.8,77.6,0.7,,19,6,1.04,TPCA,2023,A3,Arroz blanco corriente
+3,Avena,Cereales,basic,100,g,333,13.3,72.2,4,10.6,2,49,4.1,TPCA,2023,A7,"Avena, hojuela cruda"
+4,Cebada,Cereales,basic,100,g,277,5.3,79.8,0.6,15.6,,18,4,TPCA,2023,A18,Cebada perlada o resbalada cruda
+5,Fideo,Cereales,basic,100,g,337,9.4,77.7,0.2,3.2,,24,5.5,TPCA,2023,A21,Fideo crudo fortificado con hierro
+6,Maíz amarillo,Cereales,basic,100,g,355,6.7,73.6,4.8,,,6,1.92,TPCA,2023,A29,Maíz amarillo
+7,Quinua,Cereales,basic,100,g,355,13.3,67.1,6.1,5.9,30,120,4.31,TPCA,2023,A52,Quinua blanca (Puno)
+8,Harina de trigo,Cereales,basic,100,g,362,10.5,76.3,2,2.7,,36,5.5,TPCA,2023,A63,"Trigo, harina fortificada con hierro de"
+9,Arveja seca,Legumbres,basic,100,g,247,21.7,61.1,3.2,25.5,,65,2.6,TPCA,2023,T3,"Arveja, seca sin cáscara"
+10,Frejol bayo,Legumbres,basic,100,g,244,20.3,59.5,2.2,21.4,25,99,5.81,TPCA,2023,T7,Frejol bayo
+11,Frejol canario,Legumbres,basic,100,g,236,21.9,60.1,2.1,25.1,43,138,6.6,TPCA,2023,T15,Frejol canario
+12,Garbanzo,Legumbres,basic,100,g,293,17.6,63.3,5.4,17.4,29,120,5.95,TPCA,2023,T44,Garbanzo
+13,Haba seca,Legumbres,basic,100,g,233,25.9,55.3,2.4,25,63,48,8,TPCA,2023,T49,Habas secas sin cáscara
+14,Lentejas,Legumbres,basic,100,g,211,22.6,61,1,30.5,,73,7.6,TPCA,2023,T52,Lentejas chicas
+15,Pallar,Legumbres,basic,100,g,253,20.4,61.4,1.2,19,55,70,6.7,TPCA,2023,T56,Pallar seco
+16,Camote amarillo,Tubérculos,basic,100,g,95,2,23.4,0,2.9,,41,0.43,TPCA,2023,U3,Camote amarillo sin cáscara
+17,Camote blanco,Tubérculos,basic,100,g,114,1.7,28.3,0.1,,,26,2.5,TPCA,2023,U4,Camote blanco
+18,Olluco,Tubérculos,basic,100,g,59,1.1,14.3,0.1,,,3,1.1,TPCA,2023,U17,Olluco sin cáscara
+19,Papa amarilla,Tubérculos,basic,100,g,101,2,23.3,0.4,0.4,,6,0.4,TPCA,2023,U18,Papa amarilla sin cáscara
+20,Papa blanca,Tubérculos,basic,100,g,87,2.1,22.3,0.1,2.4,,9,0.5,TPCA,2023,U19,Papa blanca
+21,Yuca,Tubérculos,basic,100,g,115,0.7,31.8,0.5,3.5,,25,0.19,TPCA,2023,U36,Yuca blanca fresca sin cáscara
+22,Oca,Tubérculos,basic,100,g,53,0.7,15.6,0,2.4,,,0.47,TPCA,2023,U50,Oca sin cáscara
+23,Cerdo,Carnes,basic,100,g,198,14.4,0.1,15.1,0,,12,1.3,TPCA,2023,F13,"Cerdo, carne sin hueso"
+24,Pollo,Carnes,basic,100,g,119,21.4,0,3.1,0,,12,1.5,TPCA,2023,F26,"Pollo, carne pulpa"
+25,Hígado de pollo,Carnes,basic,100,g,125,18,3.4,3.9,,71,11,8.56,TPCA,2023,F28,"Pollo, hígado de"
+26,Sangre de pollo,Carnes,basic,100,g,65,15,,0.1,,,12,27.3,TPCA,2023,F30,"Pollo, sangre cruda de"
+27,Carne de res,Carnes,basic,100,g,105,21.3,0,1.6,0,,16,3.4,TPCA,2023,F35,"Res, carne pulpa de"
+28,Hígado de res,Carnes,basic,100,g,140,20,3.3,4.6,0,,13,5.4,TPCA,2023,F38,"Res, hígado de"
+29,Molleja de pollo,Carnes,basic,100,g,94,17.7,0,2.1,0,69,11,2.49,TPCA,2023,F79,"Pollo, molleja, cruda*"
+30,Huevo,Huevos,basic,100,g,166,12.7,2.9,11.1,,,29,2.6,TPCA,2023,J4,"Huevo de gallina entero, crudo"
+31,Anchoveta,Pescados,basic,100,g,156,19.1,0,8.2,,,77,3.04,TPCA,2023,E18,Pescado anchoveta
+32,Atún,Pescados,basic,100,g,141,23.3,,4.6,,,,,TPCA,2023,E22,"Pescado atún, fresco"
+33,Cachema,Pescados,basic,100,g,88,19.6,0,0.5,,,126,0.3,TPCA,2023,E23,Pescado ayanque o cachema
+34,Bonito,Pescados,basic,100,g,138,23.4,,4.2,,40,28,0.7,TPCA,2023,E27,Pescado bonito
+35,Caballa,Pescados,basic,100,g,182,21.5,0,10,,90,90,1.96,TPCA,2023,E35,"Pescado caballa, fresco"
+36,Jurel,Pescados,basic,100,g,121,22.2,0.3,2.7,,115,37,1.56,TPCA,2023,E50,"Pescado jurel, fresco"
+37,Sardina,Pescados,basic,100,g,146,20.2,0,6.6,,,41,1.9,TPCA,2023,E76,"Pescado sardina, fresco"
+38,Leche evaporada descremada,Lácteos,basic,100,g,79,7.1,10.5,0.9,0,,,,TPCA,2023,G6,Leche evaporada descremada
+39,Leche evaporada entera,Lácteos,basic,100,g,133,6.3,10.9,7.7,0,,231,,TPCA,2023,G7,Leche evaporada entera
+40,Leche fresca entera,Lácteos,basic,100,g,64,3.2,5.1,3.2,0,,106,0.3,TPCA,2023,G9,Leche fresca entera (Plusa)
+41,Queso fresco de cabra,Lácteos,basic,100,g,173,16.3,3.4,10.3,0,,310,0.8,TPCA,2023,G13,Queso fresco de cabra
+42,Queso fresco,Lácteos,basic,100,g,265,17.2,3.6,20.2,0,573,1105,0.14,TPCA,2023,G14,Queso fresco de vaca
+43,Yogurt,Lácteos,basic,100,g,61,3.5,4.7,3.3,0,,121,0.05,TPCA,2023,G17,Yogurt de leche entera
+44,Chirimoya,Frutas,basic,100,g,72,1.9,21.6,0.3,4,16,102,0.29,TPCA,2023,C12,Chirimoya
+45,Fresa,Frutas,basic,100,g,34,0.7,8.9,0.8,2,,37,1.2,TPCA,2023,C18,Fresa
+46,Granadilla,Frutas,basic,100,g,51,2.5,11.4,2.7,5.8,11,17,1.28,TPCA,2023,C20,Granadilla
+47,Mandarina,Frutas,basic,100,g,29,0.6,8.6,0.3,1.8,,19,0.3,TPCA,2023,C40,Mandarina
+48,Mango,Frutas,basic,100,g,54,0.4,15.9,0.2,1.8,,17,0.4,TPCA,2023,C41,Mango
+49,Manzana,Frutas,basic,100,g,50,0.3,14.6,0.1,1.3,,5,1.4,TPCA,2023,C42,Manzana nacional
+50,Melón,Frutas,basic,100,g,21,0.5,5.8,0.1,0.8,,13,0.5,TPCA,2023,C45,Melón
+51,Naranja,Frutas,basic,100,g,31,0.6,10.1,0.2,2.4,,23,0.2,TPCA,2023,C48,Naranja
+52,Palta,Frutas,basic,100,g,130,1.7,5.6,12.5,,,30,0.6,TPCA,2023,C55,Palta
+53,Papaya,Frutas,basic,100,g,25,0.4,8.2,0.1,1.8,2,23,0.3,TPCA,2023,C59,Papaya
+54,Piña,Frutas,basic,100,g,33,0.4,9.8,0.2,1.4,,10,0.4,TPCA,2023,C69,Piña
+55,Plátano,Frutas,basic,100,g,75,1.2,21.6,0.1,2.2,15,9,0.3,TPCA,2023,C70,Plátano de isla
+56,Sandía,Frutas,basic,100,g,23,0.7,5.9,0.1,0.4,,6,0.3,TPCA,2023,C83,Sandia
+57,Tuna,Frutas,basic,100,g,46,0.8,15.4,0,3.3,,16,0.3,TPCA,2023,C90,Tuna
+58,Ajo,Verduras,basic,100,g,121,5.6,30.4,0.8,2.1,69,94,1.7,TPCA,2023,B13,Ajo sin cáscara
+59,Apio,Verduras,basic,100,g,8,1,3.8,0.2,2.8,76,91,1.2,TPCA,2023,B17,"Apio, tallo sin hojas"
+60,Brócoli,Verduras,basic,100,g,32,3.9,4,1.3,0.7,23,93,0.84,TPCA,2023,B21,Brocoli
+61,Caigua,Verduras,basic,100,g,15,0.5,3.3,0.2,,,34,0.9,TPCA,2023,B22,Caigua
+62,Cebolla,Verduras,basic,100,g,24,0.9,7.4,0.1,1.4,6,100,0.2,TPCA,2023,B26,Cebolla blanca
+63,Repollo,Verduras,basic,100,g,15,1.5,4.9,0.3,2.3,58,70,0.4,TPCA,2023,B32,"Col crespa o repollo, sin cogollo"
+64,Culantro,Verduras,basic,100,g,34,3.3,7,1.3,2.8,,259,5.3,TPCA,2023,B39,Culantro sin tallo
+65,Espinaca,Verduras,basic,100,g,24,2.8,4.9,0.9,2.2,,234,4.3,TPCA,2023,B45,Espinaca negra sin tronco
+66,Lechuga,Verduras,basic,100,g,7,0.6,2.4,0.1,1.2,,52,0.1,TPCA,2023,B53,Lechuga americana
+67,Tomate,Verduras,basic,100,g,15,0.8,4.3,0.2,1.2,,7,0.6,TPCA,2023,B79,Tomate
+68,Vainitas,Verduras,basic,100,g,25,2.4,8.1,0.3,3.4,,88,1.4,TPCA,2023,B84,Vainitas
+69,Zanahoria,Verduras,basic,100,g,19,1,7.6,0.3,4.1,31,51,0.3,TPCA,2023,B85,Zanahoria
+70,Zapallo italiano,Verduras,basic,100,g,14,0.9,2.9,0.2,,,27,0.3,TPCA,2023,B87,Zapallo italiano
+71,Zapallo,Verduras,basic,100,g,47,2.2,12.7,0.1,1.3,0,26,0.32,TPCA,2023,B89,Zapallo macre
+72,Arveja fresca,Verduras,basic,100,g,85,7.1,18.8,0.6,5.1,3,27,1.7,TPCA,2023,T2,"Arveja, fresca sin vaina"
+73,Betarraga,Verduras,basic,100,g,18,2,5.4,0.3,2.7,,24,0.31,TPCA,2023,U31,Betarraga
+74,Choclo,Verduras,basic,100,g,104,3.3,27.8,0.8,2.7,,8,0.8,TPCA,2023,A34,"Maíz, grano fresco (choclo)"
+75,Aceite vegetal,Grasas,basic,100,g,884,0,0,100,0,,0,0,TPCA,2023,D4,Aceite vegetal de girasol
+76,Maní,Grasas,basic,100,g,559,24.1,17.7,48.2,8.5,,66,1.5,TPCA,2023,D14,"Maní crudo, sin cáscara con piel"
+77,Ajonjolí,Grasas,basic,100,g,525,17.7,23.5,49.7,11.8,11,975,14.55,TPCA,2023,D39,"Ajonjolí, semilla de*"
+78,Azúcar,Otros,basic,100,g,384,0,99.2,0,0,,1,0.1,TPCA,2023,K1,Azúcar granulada o refinada

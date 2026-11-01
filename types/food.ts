@@ -26,3 +26,36 @@ export interface Food {
   referencePrice: number
   nutrition: Nutrition
 }
+
+/**
+ * Nutrientes por cantidad de referencia. `null` significa que la fuente no
+ * reporta ese dato: nunca debe mostrarse ni sumarse como 0.
+ */
+export interface CatalogNutrients {
+  energyKcal: number | null
+  proteinG: number | null
+  carbohydrateG: number | null
+  fatG: number | null
+  fiberG: number | null
+  sodiumMg: number | null
+  calciumMg: number | null
+  ironMg: number | null
+}
+
+/** Alimento del catálogo TPCA servido por el backend (`GET /foods`). */
+export interface CatalogFood {
+  id: string
+  name: string
+  /** Una de las 11 categorías TPCA, p. ej. "Tubérculos". */
+  category: string
+  /** Cantidad a la que corresponden los nutrientes, hoy siempre 100 g. */
+  referenceAmount: number
+  referenceUnit: string
+  nutrients: CatalogNutrients
+  source: {
+    name: string
+    version: string
+    sourceCode: string
+    sourceName: string
+  }
+}

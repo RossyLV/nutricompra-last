@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { FoodsModule } from './foods/foods.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  // PrismaModule only wires up the DB connection (see src/prisma/).
-  // No feature/business modules (foods, nutrition, etc.) exist yet —
-  // those are out of scope for this stage.
-  imports: [PrismaModule],
+  // PrismaModule wires up the DB connection (see src/prisma/).
+  // FoodsModule serves GET /foods (TPCA catalog with nutrition data).
+  imports: [PrismaModule, FoodsModule],
   controllers: [AppController],
   providers: [AppService],
 })

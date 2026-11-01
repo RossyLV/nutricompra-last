@@ -51,27 +51,41 @@ export interface TpcaSeedRecord {
 }
 
 /**
- * An empty cell means the source does not report that nutrient, so it maps
- * to null. Number('') would silently turn it into 0, a different fact.
+ * A blank cell (empty or only spaces) means the source does not report that
+ * nutrient, so it maps to null. Number('') and Number(' ') would silently
+ * turn it into 0, a different fact. Anything else must be a number: a stray
+ * marker such as TPCA's "•" stops the seed instead of being stored.
  */
-function toNutrient(value: string): number | null {
-  return value === '' ? null : Number(value);
+function toNutrient(
+  value: string,
+  field: string,
+  foodName: string,
+): number | null {
+  if (value.trim() === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`Invalid ${field} for "${foodName}": "${value}"`);
+  }
+  return parsed;
 }
 
 export function mapTpcaRow(row: TpcaCsvRow): TpcaSeedRecord {
+  const nutrient = (field: keyof TpcaCsvRow) =>
+    toNutrient(row[field], field, row.name);
+
   return {
     food: { name: row.name, category: row.category, type: row.type },
     profile: {
       referenceAmount: Number(row.reference_amount),
       referenceUnit: row.reference_unit,
-      energyKcal: toNutrient(row.energy_kcal),
-      proteinG: toNutrient(row.protein_g),
-      carbohydrateG: toNutrient(row.carbohydrate_g),
-      fatG: toNutrient(row.fat_g),
-      fiberG: toNutrient(row.fiber_g),
-      sodiumMg: toNutrient(row.sodium_mg),
-      calciumMg: toNutrient(row.calcium_mg),
-      ironMg: toNutrient(row.iron_mg),
+      energyKcal: nutrient('energy_kcal'),
+      proteinG: nutrient('protein_g'),
+      carbohydrateG: nutrient('carbohydrate_g'),
+      fatG: nutrient('fat_g'),
+      fiberG: nutrient('fiber_g'),
+      sodiumMg: nutrient('sodium_mg'),
+      calciumMg: nutrient('calcium_mg'),
+      ironMg: nutrient('iron_mg'),
     },
     source: {
       name: row.source,

@@ -95,6 +95,18 @@ describe('mapTpcaRow', () => {
     expect(record.profile).not.toHaveProperty('id');
     expect(record.source).not.toHaveProperty('id');
   });
+
+  it('guarda como null una celda que solo tiene espacios', () => {
+    const record = mapTpcaRow({ ...arrozBlanco, fiber_g: '  ' });
+
+    expect(record.profile.fiberG).toBeNull();
+  });
+
+  it('rechaza un valor no numérico indicando el alimento ("•" en el hierro)', () => {
+    expect(() => mapTpcaRow({ ...arrozBlanco, iron_mg: '•' })).toThrow(
+      'Arroz blanco',
+    );
+  });
 });
 
 describe('readTpcaCsv', () => {

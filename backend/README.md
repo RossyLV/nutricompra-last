@@ -18,7 +18,7 @@ npm run start:dev        # http://localhost:3001
 
 El frontend espera el backend en `NEXT_PUBLIC_API_URL` (ver `.env.example` en
 la raíz del repositorio). En local, Next.js usa el puerto 3000 y el backend el
-3001; CORS solo acepta pedidos desde `http://localhost:3000`.
+3001; CORS acepta por defecto solo `http://localhost:3000` (ver `CORS_ORIGIN`).
 
 ## Variables de entorno (`backend/.env`)
 
@@ -26,6 +26,7 @@ la raíz del repositorio). En local, Next.js usa el puerto 3000 y el backend el
 |---|---|
 | `DATABASE_URL` | Cadena de conexión PostgreSQL (Neon). Nunca se versiona. |
 | `PORT` | Puerto del servidor. Por defecto `3001`. |
+| `CORS_ORIGIN` | Sitios que pueden llamar a la API, separados por comas. Por defecto `http://localhost:3000`; en producción, la URL del frontend en Vercel. |
 
 `main.ts` carga `.env` con `process.loadEnvFile()` (incluido en Node).
 

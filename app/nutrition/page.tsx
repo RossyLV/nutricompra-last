@@ -24,17 +24,21 @@ const nutritionItems = [
 /** Valores de la grilla; `null` = la fuente no reporta el dato (nunca 0). */
 type NutritionValues = Record<(typeof nutritionItems)[number]['key'], number | null>
 
-/** Íconos para las categorías TPCA; las que no tienen uno propio usan el genérico. */
-const categoryIcons: Record<string, LucideIcon> = {
-  Cereales: Wheat,
-  Legumbres: CircleDot,
-  Carnes: Beef,
-  Frutas: Apple,
-  Verduras: Carrot,
-  Lácteos: CircleDot,
-  Pescados: Fish,
-  Huevos: Egg,
-}
+/**
+ * Íconos para las categorías TPCA; las que no tienen uno propio usan el
+ * genérico. Es un Map porque la categoría es texto libre de la base: en un
+ * objeto, nombres como "constructor" devolverían algo que no es un ícono.
+ */
+const categoryIcons = new Map<string, LucideIcon>([
+  ['Cereales', Wheat],
+  ['Legumbres', CircleDot],
+  ['Carnes', Beef],
+  ['Frutas', Apple],
+  ['Verduras', Carrot],
+  ['Lácteos', CircleDot],
+  ['Pescados', Fish],
+  ['Huevos', Egg],
+])
 
 /** Respuesta inmediata al presionar, sin animación si el sistema pide reducir movimiento. */
 const pressableClass =
@@ -78,7 +82,7 @@ function NutritionGrid({ nutrition }: { nutrition: NutritionValues }) {
 }
 
 function FoodResult({ food, selected, onSelect }: { food: CatalogFood; selected: boolean; onSelect: () => void }) {
-  const Icon = categoryIcons[food.category] ?? CircleDot
+  const Icon = categoryIcons.get(food.category) ?? CircleDot
   return (
     <button
       type="button"
@@ -179,9 +183,11 @@ export default function NutritionPage() {
             </div>
           </CardHeader>
           <CardContent className="flex max-h-[520px] flex-col gap-5 overflow-y-auto">
-            <section aria-labelledby="foods-heading">
+            <section aria-labelledby="foods-heading" aria-busy={catalog.status === 'loading'}>
               <h2 id="foods-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alimentos{catalog.status === 'ready' ? ` (${results.foods.length})` : ''}</h2>
-              {catalog.status === 'loading' && <p role="status" className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Cargando alimentos…</p>}
+              {/* Región viva que existe desde el inicio: los lectores de pantalla anuncian cuando su texto cambia. */}
+              <p role="status" className="sr-only">{catalog.status === 'loading' ? 'Cargando alimentos…' : catalog.status === 'ready' ? `${catalogFoods.length} alimentos disponibles` : ''}</p>
+              {catalog.status === 'loading' && <p aria-hidden="true" className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Cargando alimentos…</p>}
               {catalog.status === 'error' && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">No se pudieron cargar los alimentos</p>}
               {catalog.status === 'ready' && <div className="flex flex-col gap-2">{results.foods.map((food) => <FoodResult key={food.id} food={food} selected={selectedKind === 'food' && selectedId === food.id} onSelect={() => { setSelectedKind('food'); setSelectedId(food.id) }} />)}</div>}
             </section>

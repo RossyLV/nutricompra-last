@@ -61,7 +61,9 @@ export async function getCatalogFoods(): Promise<CatalogFood[]> {
   if (!apiUrl) {
     throw new Error('Falta NEXT_PUBLIC_API_URL: defínela en .env.local (ver .env.example)')
   }
-  const response = await fetch(`${apiUrl}/foods`)
+  // 15 s cubre el primer arranque del backend y de Neon; si se pasa,
+  // la pantalla muestra el error en lugar de quedarse cargando.
+  const response = await fetch(`${apiUrl}/foods`, { signal: AbortSignal.timeout(15_000) })
   if (!response.ok) {
     throw new Error(`GET /foods respondió ${response.status}`)
   }

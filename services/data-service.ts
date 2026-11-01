@@ -57,7 +57,11 @@ export async function getShoppingList(): Promise<ShoppingList> {
  * backend NestJS. Es la primera función que ya no usa datos de prueba.
  */
 export async function getCatalogFoods(): Promise<CatalogFood[]> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/foods`)
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  if (!apiUrl) {
+    throw new Error('Falta NEXT_PUBLIC_API_URL: defínela en .env.local (ver .env.example)')
+  }
+  const response = await fetch(`${apiUrl}/foods`)
   if (!response.ok) {
     throw new Error(`GET /foods respondió ${response.status}`)
   }

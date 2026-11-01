@@ -22,7 +22,9 @@ export function useCatalogFoods(): CatalogFoodsState {
       .then((foods) => {
         if (active) setState({ status: 'ready', foods })
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        // La pantalla solo muestra un mensaje genérico; el detalle va a la consola.
+        console.error('No se pudo cargar el catálogo de alimentos:', error)
         if (active) setState({ status: 'error' })
       })
     return () => {

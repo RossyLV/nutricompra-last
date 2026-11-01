@@ -252,13 +252,3 @@ export const mockFoods: Food[] = [
     nutrition: { calories: 134, protein: 6.8, carbs: 10, fats: 7.6, fiber: 0 },
   },
 ]
-
-export const foodCategoryLabels: Record<Food['category'], string> = {
-  cereales: 'Cereales',
-  legumbres: 'Legumbres',
-  carnes: 'Carnes y proteínas',
-  frutas: 'Frutas',
-  verduras: 'Verduras',
-  lacteos: 'Lácteos',
-  otros: 'Otros',
-}

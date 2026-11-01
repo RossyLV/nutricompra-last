@@ -4,6 +4,7 @@
   "private": true,
   "description": "NutriCompra backend (NestJS + Prisma + PostgreSQL) — nutrition data layer",
   "scripts": {
+    "postinstall": "prisma generate",
     "build": "nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",

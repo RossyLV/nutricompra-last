@@ -10,7 +10,7 @@ import { useCatalogFoods } from '@/hooks/use-catalog-foods'
 import { usePlan } from '@/hooks/use-plan'
 import { filterFoods, foodCategories, searchByName } from '@/lib/catalog-search'
 import { dayNutrition } from '@/lib/nutrition'
-import type { CatalogFood, Meal } from '@/types'
+import type { CatalogFood } from '@/types'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -82,20 +82,21 @@ function NutritionGrid({ nutrition }: { nutrition: NutritionValues }) {
   )
 }
 
-function FoodResult({ food, selected, onSelect }: { food: CatalogFood; selected: boolean; onSelect: () => void }) {
-  const Icon = categoryIcons.get(food.category) ?? CircleDot
+
+/** Elemento de la lista (alimento o comida); `aria-pressed` indica si está elegido. */
+function ResultItem({ id, icon: Icon, iconClassName, title, subtitle, selected, onSelect }: { id: string; icon: LucideIcon; iconClassName: string; title: string; subtitle: string; selected: boolean; onSelect: () => void }) {
   return (
     <button
-      id={`food-${food.id}`}
+      id={id}
       type="button"
       onClick={onSelect}
       className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left hover:bg-muted/60 ${pressableClass} ${selected ? 'border-primary bg-primary/5' : 'border-border/70'}`}
       aria-pressed={selected}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon data-icon="inline-start" /></span>
+      <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${iconClassName}`}><Icon data-icon="inline-start" /></span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{food.name}</span>
-        <span className="block text-xs text-muted-foreground">{food.category} · por {food.referenceAmount} {food.referenceUnit}</span>
+        <span className="block truncate text-sm font-medium">{title}</span>
+        <span className="block text-xs text-muted-foreground">{subtitle}</span>
       </span>
       <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
     </button>
@@ -128,7 +129,7 @@ function SearchField({ value, onChange, label, placeholder }: { value: string; o
 /** Salida del modo enfocado: texto verde pequeño, con aspecto de enlace y no de botón. */
 function ShowAllLink({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="mt-2 self-start rounded text-xs font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring">
+    <button type="button" onClick={onClick} className="mt-2 rounded text-xs font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring">
       Ver todos
     </button>
   )
@@ -138,24 +139,6 @@ function EmptyResults({ children }: { children: React.ReactNode }) {
   return <p className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">{children}</p>
 }
 
-function MealResult({ meal, selected, onSelect }: { meal: Meal; selected: boolean; onSelect: () => void }) {
-  return (
-    <button
-      id={`meal-${meal.id}`}
-      type="button"
-      onClick={onSelect}
-      className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left hover:bg-muted/60 ${pressableClass} ${selected ? 'border-primary bg-primary/5' : 'border-border/70'}`}
-      aria-pressed={selected}
-    >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground"><Apple data-icon="inline-start" /></span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{meal.name}</span>
-        <span className="block text-xs text-muted-foreground">{mealTypeLabels[meal.type]} · porción individual</span>
-      </span>
-      <ChevronRight className="size-4 text-muted-foreground" aria-hidden="true" />
-    </button>
-  )
-}
 
 export default function NutritionPage() {
   const { plan } = usePlan()
@@ -164,7 +147,8 @@ export default function NutritionPage() {
   const [foodQuery, setFoodQuery] = useState('')
   const [foodCategory, setFoodCategory] = useState<string | null>(null)
   const [mealQuery, setMealQuery] = useState('')
-  // Modo enfocado: con algo elegido su sección muestra el buscador y solo ese elemento
+  // Modo enfocado (se decide con lo elegido ya encontrado, así un id que no existe no deja
+  // la pantalla sin salida): con algo elegido su sección muestra el buscador y solo ese elemento
   // (sin categorías) y la otra sección se oculta. Al soltarlo vuelve todo como estaba,
   // porque la búsqueda y la categoría se conservan; escribir en el buscador lo suelta.
   const [selected, setSelected] = useState<{ kind: 'food' | 'meal'; id: string } | null>(null)
@@ -240,13 +224,13 @@ export default function NutritionPage() {
 
           <div className="grid gap-6 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.6fr)]">
         <div className="flex min-w-0 flex-col gap-6">
-          {selected?.kind !== 'meal' && (
+          {!selectedMeal && (
             <Card className="h-fit">
               <CardHeader>
                 <CardTitle>Alimentos</CardTitle>
                 <CardDescription>Valores por cada 100 g.</CardDescription>
                 <SearchField value={foodQuery} onChange={(value) => { setSelected(null); setFoodQuery(value) }} label="Buscar alimento" placeholder="Ej. arroz, lentejas..." />
-                {!selected && catalog.status === 'ready' && categories.length > 0 && (
+                {!selectedFood && catalog.status === 'ready' && categories.length > 0 && (
                   // Una sola fila deslizable: en la columna angosta no entran todas las categorías.
                   <div role="group" aria-label="Filtrar por categoría" className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:thin]">
                     <CategoryChip label="Todas" selected={foodCategory === null} onSelect={() => setFoodCategory(null)} />
@@ -265,14 +249,14 @@ export default function NutritionPage() {
                   {catalog.status === 'error' && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">No se pudieron cargar los alimentos</p>}
                   {catalog.status === 'ready' && visibleFoods.length === 0 && <EmptyResults>No hay alimentos que coincidan</EmptyResults>}
                   {/* Misma lista con o sin elegido: el elemento elegido no se vuelve a crear y el foco del teclado se mantiene. */}
-                  {catalog.status === 'ready' && visibleFoods.length > 0 && <div className="flex flex-col gap-2">{visibleFoods.map((food) => <FoodResult key={food.id} food={food} selected={selectedFood?.id === food.id} onSelect={() => toggleSelection('food', food.id)} />)}</div>}
+                  {catalog.status === 'ready' && visibleFoods.length > 0 && <div className="flex flex-col gap-2">{visibleFoods.map((food) => <ResultItem key={food.id} id={`food-${food.id}`} icon={categoryIcons.get(food.category) ?? CircleDot} iconClassName="bg-primary/10 text-primary" title={food.name} subtitle={`${food.category} · por ${food.referenceAmount} ${food.referenceUnit}`} selected={selectedFood?.id === food.id} onSelect={() => toggleSelection('food', food.id)} />)}</div>}
                   {selectedFood && <ShowAllLink onClick={showAll} />}
                 </section>
               </CardContent>
             </Card>
           )}
 
-          {selected?.kind !== 'food' && (
+          {!selectedFood && (
             <Card className="h-fit">
               <CardHeader>
                 <CardTitle>Comidas</CardTitle>
@@ -281,11 +265,12 @@ export default function NutritionPage() {
               </CardHeader>
               <CardContent className="flex max-h-[420px] flex-col overflow-y-auto">
                 <section aria-labelledby="meals-heading">
+                  <p role="status" className="sr-only">{selectedMeal ? `Seleccionaste ${selectedMeal.name}` : `${mealResults.length} ${mealResults.length === 1 ? 'comida' : 'comidas'}`}</p>
                   <h2 id="meals-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{selectedMeal ? 'Seleccionaste' : `Resultados (${mealResults.length})`}</h2>
                   {visibleMeals.length === 0 ? (
                     <EmptyResults>No hay comidas que coincidan</EmptyResults>
                   ) : (
-                    <div className="flex flex-col gap-2">{visibleMeals.map((meal) => <MealResult key={meal.id} meal={meal} selected={selectedMeal?.id === meal.id} onSelect={() => toggleSelection('meal', meal.id)} />)}</div>
+                    <div className="flex flex-col gap-2">{visibleMeals.map((meal) => <ResultItem key={meal.id} id={`meal-${meal.id}`} icon={Apple} iconClassName="bg-secondary text-secondary-foreground" title={meal.name} subtitle={`${mealTypeLabels[meal.type]} · porción individual`} selected={selectedMeal?.id === meal.id} onSelect={() => toggleSelection('meal', meal.id)} />)}</div>
                   )}
                   {selectedMeal && <ShowAllLink onClick={showAll} />}
                 </section>

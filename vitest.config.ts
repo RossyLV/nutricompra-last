@@ -1,10 +1,10 @@
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
-// Tests de la lógica del frontend (lib/). El backend tiene sus propios tests
-// con Jest, por eso Vitest solo busca dentro de lib/.
+// Tests del frontend. El backend tiene sus propios tests con Jest, por eso se
+// excluye backend/ (y no se limita a una carpeta, para no ignorar tests nuevos).
 export default defineConfig({
   test: {
-    include: ['lib/**/*.test.ts'],
+    exclude: [...configDefaults.exclude, 'backend/**'],
     environment: 'node',
   },
 })

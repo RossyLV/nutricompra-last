@@ -20,6 +20,11 @@ describe('filterFoods', () => {
     expect(names('ajonjoli')).toEqual(['Ajonjolí'])
   })
 
+  it('trata la ñ como n a propósito: "pina" encuentra "Piña"', () => {
+    // Decisión de producto (revisión de SP-19/SP-20): se prefiere encontrar sin tildes ni ñ.
+    expect(searchByName([{ name: 'Piña' }, { name: 'Papaya' }], 'pina').map((item) => item.name)).toEqual(['Piña'])
+  })
+
   it('filtra por categoría: solo devuelve alimentos de la categoría elegida', () => {
     const result = filterFoods(foods, { query: '', category: 'Tubérculos' })
 

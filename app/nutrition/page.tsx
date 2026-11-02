@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Apple, Beef, Carrot, ChevronRight, CircleDot, Egg, Fish, Menu, Search, Wheat, type LucideIcon } from 'lucide-react'
 import { AppSidebar } from '@/components/app/app-sidebar'
 import { Button } from '@/components/ui/button'
@@ -86,6 +86,7 @@ function FoodResult({ food, selected, onSelect }: { food: CatalogFood; selected:
   const Icon = categoryIcons.get(food.category) ?? CircleDot
   return (
     <button
+      id={`food-${food.id}`}
       type="button"
       onClick={onSelect}
       className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left hover:bg-muted/60 ${pressableClass} ${selected ? 'border-primary bg-primary/5' : 'border-border/70'}`}
@@ -124,6 +125,15 @@ function SearchField({ value, onChange, label, placeholder }: { value: string; o
   )
 }
 
+/** Salida del modo enfocado: texto verde pequeño, con aspecto de enlace y no de botón. */
+function ShowAllLink({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="mt-2 self-start rounded text-xs font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:underline focus-visible:ring-2 focus-visible:ring-ring">
+      Ver todos
+    </button>
+  )
+}
+
 function EmptyResults({ children }: { children: React.ReactNode }) {
   return <p className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">{children}</p>
 }
@@ -131,6 +141,7 @@ function EmptyResults({ children }: { children: React.ReactNode }) {
 function MealResult({ meal, selected, onSelect }: { meal: Meal; selected: boolean; onSelect: () => void }) {
   return (
     <button
+      id={`meal-${meal.id}`}
       type="button"
       onClick={onSelect}
       className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left hover:bg-muted/60 ${pressableClass} ${selected ? 'border-primary bg-primary/5' : 'border-border/70'}`}
@@ -153,8 +164,30 @@ export default function NutritionPage() {
   const [foodQuery, setFoodQuery] = useState('')
   const [foodCategory, setFoodCategory] = useState<string | null>(null)
   const [mealQuery, setMealQuery] = useState('')
-  const [selectedId, setSelectedId] = useState('arroz-pollo')
-  const [selectedKind, setSelectedKind] = useState<'food' | 'meal'>('meal')
+  // Modo enfocado: con algo elegido su sección muestra el buscador y solo ese elemento
+  // (sin categorías) y la otra sección se oculta. Al soltarlo vuelve todo como estaba,
+  // porque la búsqueda y la categoría se conservan; escribir en el buscador lo suelta.
+  const [selected, setSelected] = useState<{ kind: 'food' | 'meal'; id: string } | null>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
+
+  const toggleSelection = (kind: 'food' | 'meal', id: string) =>
+    setSelected((current) => (current?.kind === kind && current.id === id ? null : { kind, id }))
+
+  // "Ver todos" desaparece al salir: el foco vuelve al elemento que estaba elegido.
+  const showAll = () => {
+    if (selected) document.getElementById(`${selected.kind}-${selected.id}`)?.focus()
+    setSelected(null)
+  }
+
+  // En pantallas angostas el detalle queda debajo de las listas: bajar hasta él solo si no se ve.
+  useEffect(() => {
+    const detail = detailRef.current
+    if (!selected || !detail) return
+    const { top, bottom } = detail.getBoundingClientRect()
+    if (top >= 0 && bottom <= window.innerHeight) return
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    detail.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+  }, [selected])
 
   const catalogFoods = useMemo(() => (catalog.status === 'ready' ? catalog.foods : []), [catalog])
   const categories = useMemo(() => foodCategories(catalogFoods), [catalogFoods])
@@ -164,9 +197,12 @@ export default function NutritionPage() {
   )
   const mealResults = useMemo(() => searchByName(mockMeals, mealQuery), [mealQuery])
 
-  const selectedFood = selectedKind === 'food' ? catalogFoods.find((food) => food.id === selectedId) : undefined
-  const selectedMeal = selectedKind === 'meal' ? mockMeals.find((meal) => meal.id === selectedId) : undefined
+  const selectedFood = selected?.kind === 'food' ? catalogFoods.find((food) => food.id === selected.id) : undefined
+  const selectedMeal = selected?.kind === 'meal' ? mockMeals.find((meal) => meal.id === selected.id) : undefined
   const selectedNutrition = selectedFood ? catalogNutritionValues(selectedFood) : selectedMeal?.nutrition
+  // En modo enfocado la lista muestra solo el elegido.
+  const visibleFoods = selectedFood ? [selectedFood] : foodResults
+  const visibleMeals = selectedMeal ? [selectedMeal] : mealResults
   const weeklyAverage = useMemo(() => {
     const total = plan.days.reduce((acc, day) => ({
       calories: acc.calories + dayNutrition(day).calories,
@@ -204,60 +240,67 @@ export default function NutritionPage() {
 
           <div className="grid gap-6 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.6fr)]">
         <div className="flex min-w-0 flex-col gap-6">
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle>Alimentos</CardTitle>
-              <CardDescription>Valores por cada 100 g.</CardDescription>
-              <SearchField value={foodQuery} onChange={setFoodQuery} label="Buscar alimento" placeholder="Ej. arroz, lentejas..." />
-              {catalog.status === 'ready' && categories.length > 0 && (
-                // Una sola fila deslizable: en la columna angosta no entran todas las categorías.
-                <div role="group" aria-label="Filtrar por categoría" className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:thin]">
-                  <CategoryChip label="Todas" selected={foodCategory === null} onSelect={() => setFoodCategory(null)} />
-                  {categories.map((category) => (
-                    <CategoryChip key={category} label={category} selected={foodCategory === category} onSelect={() => setFoodCategory(category)} />
-                  ))}
-                </div>
-              )}
-            </CardHeader>
-            <CardContent className="flex max-h-[420px] flex-col overflow-y-auto">
-              <section aria-labelledby="foods-heading" aria-busy={catalog.status === 'loading'}>
-                <h2 id="foods-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Resultados{catalog.status === 'ready' ? ` (${foodResults.length})` : ''}</h2>
-                {/* Región viva que existe desde el inicio: los lectores de pantalla anuncian cuando su texto cambia. */}
-                <p role="status" className="sr-only">{catalog.status === 'loading' ? 'Cargando alimentos…' : catalog.status === 'ready' ? `${foodResults.length} ${foodResults.length === 1 ? 'alimento' : 'alimentos'}` : ''}</p>
-                {catalog.status === 'loading' && <p aria-hidden="true" className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Cargando alimentos…</p>}
-                {catalog.status === 'error' && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">No se pudieron cargar los alimentos</p>}
-                {catalog.status === 'ready' && foodResults.length === 0 && <EmptyResults>No hay alimentos que coincidan</EmptyResults>}
-                {catalog.status === 'ready' && foodResults.length > 0 && <div className="flex flex-col gap-2">{foodResults.map((food) => <FoodResult key={food.id} food={food} selected={selectedKind === 'food' && selectedId === food.id} onSelect={() => { setSelectedKind('food'); setSelectedId(food.id) }} />)}</div>}
-              </section>
-            </CardContent>
-          </Card>
-
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle>Comidas</CardTitle>
-              <CardDescription>Comidas del plan · porción individual.</CardDescription>
-              <SearchField value={mealQuery} onChange={setMealQuery} label="Buscar comida" placeholder="Ej. arroz con pollo..." />
-            </CardHeader>
-            <CardContent className="flex max-h-[420px] flex-col overflow-y-auto">
-              <section aria-labelledby="meals-heading">
-                <h2 id="meals-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Resultados ({mealResults.length})</h2>
-                {mealResults.length === 0 ? (
-                  <EmptyResults>No hay comidas que coincidan</EmptyResults>
-                ) : (
-                  <div className="flex flex-col gap-2">{mealResults.map((meal) => <MealResult key={meal.id} meal={meal} selected={selectedKind === 'meal' && selectedId === meal.id} onSelect={() => { setSelectedKind('meal'); setSelectedId(meal.id) }} />)}</div>
+          {selected?.kind !== 'meal' && (
+            <Card className="h-fit">
+              <CardHeader>
+                <CardTitle>Alimentos</CardTitle>
+                <CardDescription>Valores por cada 100 g.</CardDescription>
+                <SearchField value={foodQuery} onChange={(value) => { setSelected(null); setFoodQuery(value) }} label="Buscar alimento" placeholder="Ej. arroz, lentejas..." />
+                {!selected && catalog.status === 'ready' && categories.length > 0 && (
+                  // Una sola fila deslizable: en la columna angosta no entran todas las categorías.
+                  <div role="group" aria-label="Filtrar por categoría" className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:thin]">
+                    <CategoryChip label="Todas" selected={foodCategory === null} onSelect={() => setFoodCategory(null)} />
+                    {categories.map((category) => (
+                      <CategoryChip key={category} label={category} selected={foodCategory === category} onSelect={() => setFoodCategory(category)} />
+                    ))}
+                  </div>
                 )}
-              </section>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="flex max-h-[420px] flex-col overflow-y-auto">
+                <section aria-labelledby="foods-heading" aria-busy={catalog.status === 'loading'}>
+                  <h2 id="foods-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{selectedFood ? 'Seleccionaste' : `Resultados${catalog.status === 'ready' ? ` (${foodResults.length})` : ''}`}</h2>
+                  {/* Región viva que existe desde el inicio: los lectores de pantalla anuncian cuando su texto cambia. */}
+                  <p role="status" className="sr-only">{catalog.status === 'loading' ? 'Cargando alimentos…' : selectedFood ? `Seleccionaste ${selectedFood.name}` : catalog.status === 'ready' ? `${foodResults.length} ${foodResults.length === 1 ? 'alimento' : 'alimentos'}` : ''}</p>
+                  {catalog.status === 'loading' && <p aria-hidden="true" className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Cargando alimentos…</p>}
+                  {catalog.status === 'error' && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">No se pudieron cargar los alimentos</p>}
+                  {catalog.status === 'ready' && visibleFoods.length === 0 && <EmptyResults>No hay alimentos que coincidan</EmptyResults>}
+                  {/* Misma lista con o sin elegido: el elemento elegido no se vuelve a crear y el foco del teclado se mantiene. */}
+                  {catalog.status === 'ready' && visibleFoods.length > 0 && <div className="flex flex-col gap-2">{visibleFoods.map((food) => <FoodResult key={food.id} food={food} selected={selectedFood?.id === food.id} onSelect={() => toggleSelection('food', food.id)} />)}</div>}
+                  {selectedFood && <ShowAllLink onClick={showAll} />}
+                </section>
+              </CardContent>
+            </Card>
+          )}
+
+          {selected?.kind !== 'food' && (
+            <Card className="h-fit">
+              <CardHeader>
+                <CardTitle>Comidas</CardTitle>
+                <CardDescription>Comidas del plan · porción individual.</CardDescription>
+                <SearchField value={mealQuery} onChange={(value) => { setSelected(null); setMealQuery(value) }} label="Buscar comida" placeholder="Ej. arroz con pollo..." />
+              </CardHeader>
+              <CardContent className="flex max-h-[420px] flex-col overflow-y-auto">
+                <section aria-labelledby="meals-heading">
+                  <h2 id="meals-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{selectedMeal ? 'Seleccionaste' : `Resultados (${mealResults.length})`}</h2>
+                  {visibleMeals.length === 0 ? (
+                    <EmptyResults>No hay comidas que coincidan</EmptyResults>
+                  ) : (
+                    <div className="flex flex-col gap-2">{visibleMeals.map((meal) => <MealResult key={meal.id} meal={meal} selected={selectedMeal?.id === meal.id} onSelect={() => toggleSelection('meal', meal.id)} />)}</div>
+                  )}
+                  {selectedMeal && <ShowAllLink onClick={showAll} />}
+                </section>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="flex flex-col gap-6">
-          <Card>
+          <Card ref={detailRef} className="scroll-mt-6">
             <CardHeader>
-              <CardDescription>{selectedFood ? `${selectedFood.category} · referencia por ${selectedFood.referenceAmount} ${selectedFood.referenceUnit}` : 'Comida completa · porción individual'}</CardDescription>
+              <CardDescription>{selectedFood ? `${selectedFood.category} · referencia por ${selectedFood.referenceAmount} ${selectedFood.referenceUnit}` : selectedMeal ? 'Comida completa · porción individual' : 'Información nutricional'}</CardDescription>
               <CardTitle className="text-2xl">{selectedFood?.name ?? selectedMeal?.name ?? 'Selecciona una opción'}</CardTitle>
             </CardHeader>
-            <CardContent>{selectedNutrition ? <NutritionGrid nutrition={selectedNutrition} /> : <p className="text-muted-foreground">Selecciona un alimento o comida para ver sus datos.</p>}</CardContent>
+            <CardContent>{selectedNutrition ? <NutritionGrid nutrition={selectedNutrition} /> : <p className="text-muted-foreground">Elige un alimento o una comida para ver su información nutricional.</p>}</CardContent>
           </Card>
 
           <Card>

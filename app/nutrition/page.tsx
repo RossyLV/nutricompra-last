@@ -8,6 +8,7 @@ import { mockMeals } from '@/data/mock-meals'
 import { mealTypeLabels } from '@/data/mock-plan'
 import { useCatalogFoods } from '@/hooks/use-catalog-foods'
 import { usePlan } from '@/hooks/use-plan'
+import { filterFoods, foodCategories, searchByName } from '@/lib/catalog-search'
 import { dayNutrition } from '@/lib/nutrition'
 import type { CatalogFood, Meal } from '@/types'
 import { Input } from '@/components/ui/input'
@@ -100,6 +101,33 @@ function FoodResult({ food, selected, onSelect }: { food: CatalogFood; selected:
   )
 }
 
+/** Botón de categoría (chip) con selección única; `aria-pressed` indica cuál está elegido. */
+function CategoryChip({ label, selected, onSelect }: { label: string; selected: boolean; onSelect: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium ${pressableClass} ${selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border/70 bg-background hover:bg-muted/60'}`}
+    >
+      {label}
+    </button>
+  )
+}
+
+function SearchField({ value, onChange, label, placeholder }: { value: string; onChange: (value: string) => void; label: string; placeholder: string }) {
+  return (
+    <div className="relative mt-3">
+      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+      <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} aria-label={label} className="pl-9" />
+    </div>
+  )
+}
+
+function EmptyResults({ children }: { children: React.ReactNode }) {
+  return <p className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">{children}</p>
+}
+
 function MealResult({ meal, selected, onSelect }: { meal: Meal; selected: boolean; onSelect: () => void }) {
   return (
     <button
@@ -121,18 +149,20 @@ function MealResult({ meal, selected, onSelect }: { meal: Meal; selected: boolea
 export default function NutritionPage() {
   const { plan } = usePlan()
   const catalog = useCatalogFoods()
-  const [query, setQuery] = useState('')
+  // Alimentos y Comidas se buscan por separado: lo que se escribe en uno no cambia el otro.
+  const [foodQuery, setFoodQuery] = useState('')
+  const [foodCategory, setFoodCategory] = useState<string | null>(null)
+  const [mealQuery, setMealQuery] = useState('')
   const [selectedId, setSelectedId] = useState('arroz-pollo')
   const [selectedKind, setSelectedKind] = useState<'food' | 'meal'>('meal')
 
   const catalogFoods = useMemo(() => (catalog.status === 'ready' ? catalog.foods : []), [catalog])
-
-  const results = useMemo(() => {
-    const normalized = query.trim().toLowerCase()
-    const foods = catalogFoods.filter((food) => !normalized || food.name.toLowerCase().includes(normalized))
-    const meals = mockMeals.filter((meal) => !normalized || meal.name.toLowerCase().includes(normalized))
-    return { foods, meals }
-  }, [query, catalogFoods])
+  const categories = useMemo(() => foodCategories(catalogFoods), [catalogFoods])
+  const foodResults = useMemo(
+    () => filterFoods(catalogFoods, { query: foodQuery, category: foodCategory }),
+    [catalogFoods, foodQuery, foodCategory],
+  )
+  const mealResults = useMemo(() => searchByName(mockMeals, mealQuery), [mealQuery])
 
   const selectedFood = selectedKind === 'food' ? catalogFoods.find((food) => food.id === selectedId) : undefined
   const selectedMeal = selectedKind === 'meal' ? mockMeals.find((meal) => meal.id === selectedId) : undefined
@@ -173,30 +203,53 @@ export default function NutritionPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.6fr)]">
-        <Card className="h-fit">
-          <CardHeader>
-            <CardTitle>Buscar alimento o comida</CardTitle>
-            <CardDescription>Los alimentos se muestran por cada 100 g.</CardDescription>
-            <div className="relative mt-3">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-              <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ej. arroz, lentejas..." aria-label="Buscar alimento o comida" className="pl-9" />
-            </div>
-          </CardHeader>
-          <CardContent className="flex max-h-[520px] flex-col gap-5 overflow-y-auto">
-            <section aria-labelledby="foods-heading" aria-busy={catalog.status === 'loading'}>
-              <h2 id="foods-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Alimentos{catalog.status === 'ready' ? ` (${results.foods.length})` : ''}</h2>
-              {/* Región viva que existe desde el inicio: los lectores de pantalla anuncian cuando su texto cambia. */}
-              <p role="status" className="sr-only">{catalog.status === 'loading' ? 'Cargando alimentos…' : catalog.status === 'ready' ? `${catalogFoods.length} alimentos disponibles` : ''}</p>
-              {catalog.status === 'loading' && <p aria-hidden="true" className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Cargando alimentos…</p>}
-              {catalog.status === 'error' && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">No se pudieron cargar los alimentos</p>}
-              {catalog.status === 'ready' && <div className="flex flex-col gap-2">{results.foods.map((food) => <FoodResult key={food.id} food={food} selected={selectedKind === 'food' && selectedId === food.id} onSelect={() => { setSelectedKind('food'); setSelectedId(food.id) }} />)}</div>}
-            </section>
-            <section aria-labelledby="meals-heading">
-              <h2 id="meals-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Comidas ({results.meals.length})</h2>
-              <div className="flex flex-col gap-2">{results.meals.map((meal) => <MealResult key={meal.id} meal={meal} selected={selectedKind === 'meal' && selectedId === meal.id} onSelect={() => { setSelectedKind('meal'); setSelectedId(meal.id) }} />)}</div>
-            </section>
-          </CardContent>
-        </Card>
+        <div className="flex min-w-0 flex-col gap-6">
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>Alimentos</CardTitle>
+              <CardDescription>Valores por cada 100 g.</CardDescription>
+              <SearchField value={foodQuery} onChange={setFoodQuery} label="Buscar alimento" placeholder="Ej. arroz, lentejas..." />
+              {catalog.status === 'ready' && categories.length > 0 && (
+                // Una sola fila deslizable: en la columna angosta no entran todas las categorías.
+                <div role="group" aria-label="Filtrar por categoría" className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 py-1 [scrollbar-width:thin]">
+                  <CategoryChip label="Todas" selected={foodCategory === null} onSelect={() => setFoodCategory(null)} />
+                  {categories.map((category) => (
+                    <CategoryChip key={category} label={category} selected={foodCategory === category} onSelect={() => setFoodCategory(category)} />
+                  ))}
+                </div>
+              )}
+            </CardHeader>
+            <CardContent className="flex max-h-[420px] flex-col overflow-y-auto">
+              <section aria-labelledby="foods-heading" aria-busy={catalog.status === 'loading'}>
+                <h2 id="foods-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Resultados{catalog.status === 'ready' ? ` (${foodResults.length})` : ''}</h2>
+                {/* Región viva que existe desde el inicio: los lectores de pantalla anuncian cuando su texto cambia. */}
+                <p role="status" className="sr-only">{catalog.status === 'loading' ? 'Cargando alimentos…' : catalog.status === 'ready' ? `${foodResults.length} ${foodResults.length === 1 ? 'alimento' : 'alimentos'}` : ''}</p>
+                {catalog.status === 'loading' && <p aria-hidden="true" className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">Cargando alimentos…</p>}
+                {catalog.status === 'error' && <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">No se pudieron cargar los alimentos</p>}
+                {catalog.status === 'ready' && foodResults.length === 0 && <EmptyResults>No hay alimentos que coincidan</EmptyResults>}
+                {catalog.status === 'ready' && foodResults.length > 0 && <div className="flex flex-col gap-2">{foodResults.map((food) => <FoodResult key={food.id} food={food} selected={selectedKind === 'food' && selectedId === food.id} onSelect={() => { setSelectedKind('food'); setSelectedId(food.id) }} />)}</div>}
+              </section>
+            </CardContent>
+          </Card>
+
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>Comidas</CardTitle>
+              <CardDescription>Comidas del plan · porción individual.</CardDescription>
+              <SearchField value={mealQuery} onChange={setMealQuery} label="Buscar comida" placeholder="Ej. arroz con pollo..." />
+            </CardHeader>
+            <CardContent className="flex max-h-[420px] flex-col overflow-y-auto">
+              <section aria-labelledby="meals-heading">
+                <h2 id="meals-heading" className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Resultados ({mealResults.length})</h2>
+                {mealResults.length === 0 ? (
+                  <EmptyResults>No hay comidas que coincidan</EmptyResults>
+                ) : (
+                  <div className="flex flex-col gap-2">{mealResults.map((meal) => <MealResult key={meal.id} meal={meal} selected={selectedKind === 'meal' && selectedId === meal.id} onSelect={() => { setSelectedKind('meal'); setSelectedId(meal.id) }} />)}</div>
+                )}
+              </section>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="flex flex-col gap-6">
           <Card>

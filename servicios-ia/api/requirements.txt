@@ -1,3 +1,7 @@
 # Dependencias de la API (se usan en el Dockerfile)
 fastapi==0.115.0
 uvicorn==0.30.6
+python-multipart==0.0.9   # necesario para recibir fotos (UploadFile)
+pillow==10.4.0
+transformers==4.44.2
+torch==2.4.1              # se ejecuta en CPU

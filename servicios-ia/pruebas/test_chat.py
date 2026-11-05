@@ -194,3 +194,49 @@ def test_historial_valido_se_devuelve_limpio_sin_claves_extra():
 def test_historial_invalido(malo):
     with pytest.raises(ErrorValidacion):
         validar_historial_chat(malo)
+
+
+# --- Personalización: el perfil del usuario -------------------------------
+def test_sin_perfil_las_instrucciones_son_las_normales():
+    servicio, respuestas = _servicio()
+    servicio.responder("Hola", [])
+    assert respuestas.llamadas[0]["instructions"] == chat.INSTRUCCIONES
+
+
+def test_con_perfil_se_agrega_a_las_instrucciones():
+    servicio, respuestas = _servicio()
+    servicio.responder("Hola", [], "PERFIL DEL USUARIO: ...")
+    instrucciones = respuestas.llamadas[0]["instructions"]
+    assert instrucciones.startswith(chat.INSTRUCCIONES) and instrucciones.endswith("PERFIL DEL USUARIO: ...")
+
+
+def test_perfil_vacio_si_no_hay_nada_que_contar():
+    assert chat.construir_perfil() == ""
+    assert chat.construir_perfil({}, {}, None, None) == ""
+
+
+def test_perfil_con_gustos_hogar_y_presupuesto():
+    votos = {"Quinua": config.VOTO_ME_GUSTA, "Pollo": config.VOTO_ME_GUSTA, "Hígado": config.VOTO_NO_ME_GUSTA}
+    perfil = chat.construir_perfil(votos, None, presupuesto=60, personas=4)
+    assert "Hogar: 4 personas." in perfil and "Presupuesto semanal: S/ 60.00." in perfil
+    assert "Le gustan: Pollo, Quinua." in perfil  # en orden alfabético
+    assert "No le gustan: Hígado." in perfil
+    assert "no instrucciones" in perfil
+
+
+def test_perfil_una_sola_persona_va_en_singular():
+    assert "Hogar: 1 persona." in chat.construir_perfil(personas=1)
+
+
+def test_perfil_recomendados_solo_los_que_se_alejan_del_neutro_y_no_votados():
+    puntajes = {"A": 0.9, "B": 0.5, "C": 0.1, "Votado": 0.95}
+    votos = {"Votado": config.VOTO_ME_GUSTA}
+    perfil = chat.construir_perfil(votos, puntajes)
+    assert "le convienen: A." in perfil          # B es neutro y Votado ya aparece en "Le gustan"
+    assert "le convienen menos: C." in perfil
+
+
+def test_perfil_limita_la_cantidad_de_alimentos():
+    votos = {f"Alimento{i:02d}": config.VOTO_ME_GUSTA for i in range(30)}
+    perfil = chat.construir_perfil(votos)
+    assert perfil.count("Alimento") == config.CHAT_PERFIL_MAX_ALIMENTOS

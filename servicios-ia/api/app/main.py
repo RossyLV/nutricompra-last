@@ -19,6 +19,8 @@ from app.validacion import (
     validar_categoria,
     validar_historial_chat,
     validar_mensaje_chat,
+    validar_personas,
+    validar_presupuesto,
     validar_usuario_id,
     validar_voto,
 )
@@ -52,9 +54,10 @@ class EntradaVoto(BaseModel):
 
 
 class EntradaChat(BaseModel):
-    """Una pregunta al asistente, con la conversación previa (opcional).
+    """Una pregunta al asistente, con la conversación previa y datos del usuario (opcionales).
 
     El servicio no guarda conversaciones: quien llama (la web o el dashboard) envía el historial.
+    Con "usuario_id" (y opcionalmente presupuesto y personas) las respuestas se personalizan.
     """
 
     mensaje: Any = Field(..., description="Pregunta del usuario (máx. 500 caracteres)", examples=["¿Qué alimento barato tiene hierro?"])
@@ -63,6 +66,13 @@ class EntradaChat(BaseModel):
         description="Opcional. Lista de {'role': 'user' | 'assistant', 'content': texto}, máx. 10 mensajes.",
         examples=[[{"role": "user", "content": "Hola"}, {"role": "assistant", "content": "¡Hola! ¿En qué te ayudo?"}]],
     )
+    usuario_id: Any = Field(
+        None,
+        description="Opcional. Si se indica, el chat usa los 'me gusta / no me gusta' de ese usuario.",
+        examples=["familia_perez"],
+    )
+    presupuesto: Any = Field(None, description="Opcional. Presupuesto semanal en soles (> 0)", examples=[60])
+    personas: Any = Field(None, description="Opcional. Personas del hogar (>= 1)", examples=[4])
 
 
 def obtener_servicio_chat() -> chat.ServicioChat:
@@ -221,17 +231,37 @@ def reiniciar_feedback(usuario_id: str, almacen: Almacen = Depends(obtener_almac
 # Chat con el asistente (modelo de Microsoft Foundry + catálogo)
 # ---------------------------------------------------------------------------
 @app.post("/chat")
-def conversar(entrada: EntradaChat, servicio: chat.ServicioChat = Depends(obtener_servicio_chat)) -> dict:
+def conversar(
+    entrada: EntradaChat,
+    servicio: chat.ServicioChat = Depends(obtener_servicio_chat),
+    almacen: Almacen = Depends(obtener_almacen),
+) -> dict:
     """Responde una pregunta de alimentación, compras o presupuesto usando el catálogo.
 
+    Si se envía "usuario_id", la respuesta se adapta a los gustos de ese usuario (y a su
+    presupuesto y número de personas si también se envían). Sin esos datos responde de forma general.
     Devuelve 503 si el chat no está configurado (.env) y 502 si Foundry no responde.
     """
     try:
         mensaje = validar_mensaje_chat(entrada.mensaje)
         historial = validar_historial_chat(entrada.historial)
+        presupuesto = None if entrada.presupuesto is None else validar_presupuesto(entrada.presupuesto)
+        personas = None if entrada.personas is None else validar_personas(entrada.personas)
+        usuario = None if entrada.usuario_id is None else validar_usuario_id(entrada.usuario_id)
     except ErrorValidacion as error:
         raise HTTPException(status_code=422, detail=str(error))
+
+    votos: dict[str, str] = {}
+    puntajes: dict[str, float] = {}
+    if usuario is not None:
+        votos = almacen.obtener_votos(usuario)
+        puntajes = preferencias.calcular_preferencias(_catalogo(), votos)
+    perfil = chat.construir_perfil(votos, puntajes, presupuesto, personas)
+
     try:
-        return servicio.responder(mensaje, historial)
+        resultado = servicio.responder(mensaje, historial, perfil)
     except chat.ErrorChat as error:
         raise HTTPException(status_code=502, detail=str(error))
+    if usuario is not None:
+        resultado["personalizacion"] = {"usuario_id": usuario, "votos_usados": len(votos)}
+    return resultado

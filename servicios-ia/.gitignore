@@ -5,3 +5,4 @@ __pycache__/
 .venv/
 # Los modelos descargados de Hugging Face no se suben al repositorio
 .cache/
+datos/*.db

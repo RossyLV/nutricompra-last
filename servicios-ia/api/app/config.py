@@ -32,6 +32,29 @@ def _leer_entero_positivo(nombre: str, por_defecto: int) -> int:
     return numero if numero > 0 else por_defecto
 
 
+def cargar_env(ruta: Path) -> None:
+    """Lee un archivo .env (líneas CLAVE=valor) y las deja como variables de entorno.
+
+    - Ignora líneas vacías y comentarios (#).
+    - NO pisa las variables que ya existen en el entorno (por ejemplo las de Docker o CI).
+    - Si el archivo no existe, no hace nada.
+    """
+    if not ruta.is_file():
+        return
+    for linea in ruta.read_text(encoding="utf-8").splitlines():
+        linea = linea.strip()
+        if not linea or linea.startswith("#") or "=" not in linea:
+            continue
+        nombre, valor = linea.split("=", 1)
+        nombre = nombre.strip()
+        valor = valor.strip().strip('"').strip("'")
+        if nombre:
+            os.environ.setdefault(nombre, valor)
+
+
+# El .env vive en servicios-ia/ y NO se sube a GitHub (guarda claves).
+cargar_env(DIRECTORIO_BASE / ".env")
+
 # --- Valores que vienen del entorno (.env) con un valor por defecto ---
 ENTORNO: str = os.getenv("ENTORNO", "desarrollo")
 MODELO_HF: str = os.getenv("MODELO_HF", "nateraw/food")
@@ -40,6 +63,21 @@ RUTA_EQUIVALENCIAS: Path = _resolver_ruta(
     os.getenv("RUTA_EQUIVALENCIAS", "datos/equivalencias.csv")
 )
 TAMANO_MAX_IMAGEN_MB: int = _leer_entero_positivo("TAMANO_MAX_IMAGEN_MB", 5)
+# Base de datos (SQLite) donde se guardan los "me gusta / no me gusta" (Fase 4).
+RUTA_BASE_DATOS: Path = _resolver_ruta(os.getenv("RUTA_BASE_DATOS", "datos/preferencias.db"))
+
+# --- Chat con un modelo de Microsoft Foundry (Fase 5). Las claves SOLO vienen del .env ---
+CHAT_ENDPOINT: str = os.getenv("AZURE_OPENAI_ENDPOINT", "")
+CHAT_CLAVE: str = os.getenv("AZURE_OPENAI_API_KEY", "")
+CHAT_MODELO: str = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-5-mini")  # nombre del despliegue
+CHAT_ID_INDICE: str = os.getenv("ID_INDICE_CATALOGO", "")  # lo imprime herramientas/crear_indice.py
+CHAT_MAX_TOKENS_SALIDA: int = _leer_entero_positivo("CHAT_MAX_TOKENS_SALIDA", 2000)
+CHAT_TIEMPO_ESPERA_S: int = 60
+# Límites de lo que se acepta del usuario en el chat.
+CHAT_MENSAJE_MAX_LARGO: int = 500
+CHAT_HISTORIAL_MAX_MENSAJES: int = 10
+CHAT_HISTORIAL_MAX_LARGO: int = 2000
+ROLES_CHAT: tuple[str, ...] = ("user", "assistant")
 
 # --- Constantes fijas del dominio ---
 # Las 5 categorías que usa la aplicación para el balance nutricional.
@@ -131,6 +169,35 @@ SEMILLA_POR_DEFECTO: int = 42      # misma semilla = mismo menú (resultados rep
 
 # Pesos de la función objetivo (qué tanto importa cada cosa)
 PESO_VARIEDAD: float = 0.05
-PESO_PREFERENCIA: float = 0.15
+PESO_PREFERENCIA: float = 1.2
 PESO_COSTO: float = 0.02           # a igual nutrición, se prefiere el menú más barato
 PREFERENCIA_NEUTRA: float = 0.5    # puntaje de un alimento sin "me gusta" ni "no me gusta"
+
+# ---------------------------------------------------------------------------
+# Preferencias del usuario: "me gusta / no me gusta" (Fase 4)
+# ---------------------------------------------------------------------------
+VOTO_ME_GUSTA: str = "me_gusta"
+VOTO_NO_ME_GUSTA: str = "no_me_gusta"
+VOTOS_VALIDOS: tuple[str, ...] = (VOTO_ME_GUSTA, VOTO_NO_ME_GUSTA)
+USUARIO_ID_MAX_LARGO: int = 50
+
+# Características con las que se "describe" cada alimento para medir qué tanto
+# se parece a otro. Los nutrientes son los valores por 100 g del catálogo.
+NUTRIENTES_CONTENIDO: tuple[str, ...] = (
+    "energy_kcal",
+    "protein_g",
+    "carbohydrate_g",
+    "fat_g",
+    "calcium_mg",
+    "iron_mg",
+)
+# Qué tanto pesa cada grupo de características al medir el parecido (suman 1).
+PESOS_CARACTERISTICAS: dict[str, float] = {"categoria": 0.10, "nutrientes": 0.70, "precio": 0.20}
+
+# Cómo se convierte el parecido en puntaje de preferencia:
+# - EXPONENTE_SIMILITUD: mientras más alto, solo cuentan los alimentos MUY parecidos.
+# - SUAVIZADO_PREFERENCIA: "evidencia mínima". Con pocos votos parecidos el puntaje
+#   se queda cerca de neutro; con más votos coherentes se aleja más.
+EXPONENTE_SIMILITUD: int = 8
+SUAVIZADO_PREFERENCIA: float = 0.5
+PREFERENCIAS_DESTACADAS: int = 5   # cuántos alimentos mostrar en "más / menos recomendados"

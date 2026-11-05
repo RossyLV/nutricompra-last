@@ -5,8 +5,12 @@ Cada función revisa un dato y, si está mal, lanza ErrorValidacion con un
 mensaje en español que se puede mostrar tal cual en la pantalla.
 """
 import math
+import re
 
 from app import config
+
+# Un identificador de usuario solo puede tener letras, números, punto, guion y guion bajo.
+_PATRON_USUARIO_ID = re.compile(r"[A-Za-z0-9_.\-]+")
 
 
 class ErrorValidacion(ValueError):
@@ -61,6 +65,78 @@ def validar_categoria(valor) -> str:
         permitidas = ", ".join(config.CATEGORIAS_CATALOGO)
         raise ErrorValidacion(f"Categoría no válida. Opciones: {permitidas}.")
     return categoria
+
+
+def validar_usuario_id(valor) -> str:
+    """Valida el identificador del usuario (ej. "familia_perez").
+
+    Texto de 1 a USUARIO_ID_MAX_LARGO caracteres, solo letras, números, ".", "-" y "_".
+    """
+    if not isinstance(valor, str):
+        raise ErrorValidacion("El identificador de usuario debe ser un texto.")
+    usuario = valor.strip()
+    if not usuario:
+        raise ErrorValidacion("El identificador de usuario no puede estar vacío.")
+    if len(usuario) > config.USUARIO_ID_MAX_LARGO:
+        raise ErrorValidacion(
+            f"El identificador de usuario no puede superar {config.USUARIO_ID_MAX_LARGO} caracteres."
+        )
+    if not _PATRON_USUARIO_ID.fullmatch(usuario):
+        raise ErrorValidacion(
+            "El identificador de usuario solo puede tener letras, números, punto, guion y guion bajo."
+        )
+    return usuario
+
+
+def validar_voto(valor) -> str:
+    """Valida el voto: debe ser "me_gusta" o "no_me_gusta"."""
+    if not isinstance(valor, str) or valor.strip().lower() not in config.VOTOS_VALIDOS:
+        opciones = ", ".join(config.VOTOS_VALIDOS)
+        raise ErrorValidacion(f"Voto no válido. Opciones: {opciones}.")
+    return valor.strip().lower()
+
+
+def validar_mensaje_chat(valor) -> str:
+    """Valida la pregunta del chat: texto no vacío de hasta CHAT_MENSAJE_MAX_LARGO caracteres."""
+    if not isinstance(valor, str):
+        raise ErrorValidacion("El mensaje debe ser un texto.")
+    mensaje = valor.strip()
+    if not mensaje:
+        raise ErrorValidacion("El mensaje no puede estar vacío.")
+    if len(mensaje) > config.CHAT_MENSAJE_MAX_LARGO:
+        raise ErrorValidacion(f"El mensaje no puede superar {config.CHAT_MENSAJE_MAX_LARGO} caracteres.")
+    return mensaje
+
+
+def validar_historial_chat(valor) -> list[dict]:
+    """Valida la conversación previa: lista de {"role": "user"|"assistant", "content": texto}.
+
+    Es opcional (None = conversación nueva). Se devuelve una copia limpia con solo esas dos claves.
+    """
+    if valor is None:
+        return []
+    if not isinstance(valor, list):
+        raise ErrorValidacion("El historial debe ser una lista de mensajes.")
+    if len(valor) > config.CHAT_HISTORIAL_MAX_MENSAJES:
+        raise ErrorValidacion(
+            f"El historial no puede tener más de {config.CHAT_HISTORIAL_MAX_MENSAJES} mensajes."
+        )
+    limpio: list[dict] = []
+    for numero, item in enumerate(valor, start=1):
+        if not isinstance(item, dict):
+            raise ErrorValidacion(f"El mensaje {numero} del historial no es válido.")
+        rol, contenido = item.get("role"), item.get("content")
+        if rol not in config.ROLES_CHAT:
+            opciones = ", ".join(config.ROLES_CHAT)
+            raise ErrorValidacion(f"El mensaje {numero} del historial tiene un rol no válido. Opciones: {opciones}.")
+        if not isinstance(contenido, str) or not contenido.strip():
+            raise ErrorValidacion(f"El mensaje {numero} del historial debe tener texto.")
+        if len(contenido) > config.CHAT_HISTORIAL_MAX_LARGO:
+            raise ErrorValidacion(
+                f"El mensaje {numero} del historial supera {config.CHAT_HISTORIAL_MAX_LARGO} caracteres."
+            )
+        limpio.append({"role": rol, "content": contenido})
+    return limpio
 
 
 def validar_imagen(tipo_mime, tamano_bytes) -> None:

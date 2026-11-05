@@ -1,7 +1,8 @@
 """API (FastAPI) de los servicios de IA de NutriCompra.
 
-Expone el catálogo y la clasificación de fotos para que el prototipo y el
-dashboard los consuman. Más adelante se agrega la recomendación de menús.
+Expone el catálogo, la clasificación de fotos, la recomendación de menús y las
+preferencias del usuario ("me gusta / no me gusta") para que el prototipo y el
+dashboard los consuman.
 """
 from functools import lru_cache
 from typing import Any
@@ -11,13 +12,21 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 from app import catalogo as cat
-from app import clasificador, config, recomendador
-from app.validacion import ErrorValidacion, validar_categoria
+from app import chat, clasificador, config, preferencias, recomendador
+from app.almacen import Almacen
+from app.validacion import (
+    ErrorValidacion,
+    validar_categoria,
+    validar_historial_chat,
+    validar_mensaje_chat,
+    validar_usuario_id,
+    validar_voto,
+)
 
 app = FastAPI(
     title="NutriCompra Inteligente - Servicios de IA",
-    description="Catálogo, clasificación de alimentos y recomendación de menús.",
-    version="0.3.0",
+    description="Catálogo, clasificación de alimentos, recomendación de menús, preferencias y chat.",
+    version="0.4.0",
 )
 
 
@@ -27,6 +36,47 @@ class EntradaRecomendacion(BaseModel):
 
     presupuesto: Any = Field(..., description="Presupuesto semanal en soles (> 0)", examples=[200])
     personas: Any = Field(..., description="Personas del hogar (>= 1)", examples=[4])
+    usuario_id: Any = Field(
+        None,
+        description="Opcional. Si se indica, el menú se adapta a los 'me gusta / no me gusta' de ese usuario.",
+        examples=["familia_perez"],
+    )
+
+
+class EntradaVoto(BaseModel):
+    """Un voto del usuario sobre un alimento (también validado en app.validacion)."""
+
+    usuario_id: Any = Field(..., description="Identificador del usuario o familia", examples=["familia_perez"])
+    alimento: Any = Field(..., description="Nombre del alimento tal como está en el catálogo", examples=["Quinua"])
+    voto: Any = Field(..., description="'me_gusta' o 'no_me_gusta'", examples=["me_gusta"])
+
+
+class EntradaChat(BaseModel):
+    """Una pregunta al asistente, con la conversación previa (opcional).
+
+    El servicio no guarda conversaciones: quien llama (la web o el dashboard) envía el historial.
+    """
+
+    mensaje: Any = Field(..., description="Pregunta del usuario (máx. 500 caracteres)", examples=["¿Qué alimento barato tiene hierro?"])
+    historial: Any = Field(
+        None,
+        description="Opcional. Lista de {'role': 'user' | 'assistant', 'content': texto}, máx. 10 mensajes.",
+        examples=[[{"role": "user", "content": "Hola"}, {"role": "assistant", "content": "¡Hola! ¿En qué te ayudo?"}]],
+    )
+
+
+def obtener_servicio_chat() -> chat.ServicioChat:
+    """Servicio del chat. Es una dependencia para poder reemplazarla en las pruebas."""
+    try:
+        return chat.obtener_servicio()
+    except chat.ErrorConfiguracionChat as error:
+        raise HTTPException(status_code=503, detail=str(error))
+
+
+@lru_cache
+def obtener_almacen() -> Almacen:
+    """Almacén de votos (SQLite). Es una dependencia para poder cambiarla en las pruebas."""
+    return Almacen()
 
 
 @lru_cache
@@ -94,9 +144,94 @@ async def clasificar(
 
 
 @app.post("/recomendar")
-def recomendar(entrada: EntradaRecomendacion) -> dict:
-    """Arma el menú semanal de 21 comidas dentro del presupuesto, con la lista de compras."""
+def recomendar(entrada: EntradaRecomendacion, almacen: Almacen = Depends(obtener_almacen)) -> dict:
+    """Arma el menú semanal de 21 comidas dentro del presupuesto, con la lista de compras.
+
+    Si se envía "usuario_id", el menú se adapta a sus "me gusta / no me gusta".
+    Sin "usuario_id" funciona igual que antes (sin personalización).
+    """
     try:
-        return recomendador.generar_menu(_catalogo(), entrada.presupuesto, entrada.personas)
+        usuario = None
+        gustos = None
+        votos: dict[str, str] = {}
+        if entrada.usuario_id is not None:
+            usuario = validar_usuario_id(entrada.usuario_id)
+            votos = almacen.obtener_votos(usuario)
+            gustos = preferencias.calcular_preferencias(_catalogo(), votos)
+        menu = recomendador.generar_menu(
+            _catalogo(), entrada.presupuesto, entrada.personas, preferencias=gustos
+        )
     except ErrorValidacion as error:  # incluye "presupuesto insuficiente"
         raise HTTPException(status_code=422, detail=str(error))
+    if usuario is not None:
+        menu["personalizacion"] = {"usuario_id": usuario, "votos_usados": len(votos)}
+    return menu
+
+
+# ---------------------------------------------------------------------------
+# Preferencias del usuario ("me gusta / no me gusta")
+# ---------------------------------------------------------------------------
+@app.post("/feedback")
+def registrar_feedback(entrada: EntradaVoto, almacen: Almacen = Depends(obtener_almacen)) -> dict:
+    """Registra un voto. Si el usuario ya había votado ese alimento, el nuevo voto lo reemplaza."""
+    try:
+        usuario = validar_usuario_id(entrada.usuario_id)
+        alimento = preferencias.resolver_alimento(_catalogo(), entrada.alimento)
+        voto = validar_voto(entrada.voto)
+    except ErrorValidacion as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    total = almacen.registrar_voto(usuario, alimento, voto)
+    return {"usuario_id": usuario, "alimento": alimento, "voto": voto, "total_votos": total}
+
+
+@app.get("/preferencias/{usuario_id}")
+def ver_preferencias(usuario_id: str, almacen: Almacen = Depends(obtener_almacen)) -> dict:
+    """Muestra los votos de un usuario, qué alimentos recomendaría más y menos, y su historial."""
+    try:
+        usuario = validar_usuario_id(usuario_id)
+    except ErrorValidacion as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    votos = almacen.obtener_votos(usuario)
+    gustos = preferencias.calcular_preferencias(_catalogo(), votos)
+    destacados = preferencias.resumir_preferencias(_catalogo(), gustos) if gustos else {
+        "mas_recomendados": [],
+        "menos_recomendados": [],
+    }
+    return {
+        "usuario_id": usuario,
+        "total_votos": len(votos),
+        "me_gusta": sorted(n for n, v in votos.items() if v == config.VOTO_ME_GUSTA),
+        "no_me_gusta": sorted(n for n, v in votos.items() if v == config.VOTO_NO_ME_GUSTA),
+        **destacados,
+        "historial": almacen.obtener_historial(usuario),
+    }
+
+
+@app.delete("/feedback/{usuario_id}")
+def reiniciar_feedback(usuario_id: str, almacen: Almacen = Depends(obtener_almacen)) -> dict:
+    """Borra todos los votos de un usuario (útil para repetir la demostración)."""
+    try:
+        usuario = validar_usuario_id(usuario_id)
+    except ErrorValidacion as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    return {"usuario_id": usuario, "votos_borrados": almacen.reiniciar(usuario)}
+
+
+# ---------------------------------------------------------------------------
+# Chat con el asistente (modelo de Microsoft Foundry + catálogo)
+# ---------------------------------------------------------------------------
+@app.post("/chat")
+def conversar(entrada: EntradaChat, servicio: chat.ServicioChat = Depends(obtener_servicio_chat)) -> dict:
+    """Responde una pregunta de alimentación, compras o presupuesto usando el catálogo.
+
+    Devuelve 503 si el chat no está configurado (.env) y 502 si Foundry no responde.
+    """
+    try:
+        mensaje = validar_mensaje_chat(entrada.mensaje)
+        historial = validar_historial_chat(entrada.historial)
+    except ErrorValidacion as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    try:
+        return servicio.responder(mensaje, historial)
+    except chat.ErrorChat as error:
+        raise HTTPException(status_code=502, detail=str(error))

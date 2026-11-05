@@ -5,3 +5,5 @@ python-multipart==0.0.9   # necesario para recibir fotos (UploadFile)
 pillow==10.4.0
 transformers==4.44.2
 torch==2.4.1              # se ejecuta en CPU
+
+openai>=1.66.0

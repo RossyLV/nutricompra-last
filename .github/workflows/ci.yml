@@ -1,0 +1,30 @@
+# Integración continua de los servicios de IA (Python).
+# Se ejecuta en cada push y en cada pull request.
+name: CI servicios-ia
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pruebas-python:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: servicios-ia
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: servicios-ia/requirements-dev.txt
+
+      - name: Instalar dependencias de prueba
+        run: pip install -r requirements-dev.txt
+
+      - name: Ejecutar pytest
+        run: pytest

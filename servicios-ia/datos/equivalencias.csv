@@ -1,0 +1,102 @@
+clase_food101,nombre_es,app_category,alimento_catalogo
+apple_pie,Pastel de manzana,fruta,Manzana
+baby_back_ribs,Costillas de cerdo,proteina,Cerdo
+baklava,Baklava,otro,
+beef_carpaccio,Carpaccio de res,proteina,Carne de res
+beef_tartare,Tartar de res,proteina,Carne de res
+beet_salad,Ensalada de betarraga,vegetal,Betarraga
+beignets,Buñuelos,carbohidrato,Harina de trigo
+bibimbap,Bibimbap,carbohidrato,Arroz blanco
+bread_pudding,Budín de pan,carbohidrato,Harina de trigo
+breakfast_burrito,Burrito de desayuno,carbohidrato,Harina de trigo
+bruschetta,Bruschetta,carbohidrato,Harina de trigo
+caesar_salad,Ensalada César,vegetal,Lechuga
+cannoli,Cannoli,otro,
+caprese_salad,Ensalada caprese,vegetal,Tomate
+carrot_cake,Pastel de zanahoria,otro,
+ceviche,Ceviche,proteina,Jurel
+cheese_plate,Tabla de quesos,lacteo,Queso fresco
+cheesecake,Pastel de queso,lacteo,Queso fresco
+chicken_curry,Pollo al curry,proteina,Pollo
+chicken_quesadilla,Quesadilla de pollo,proteina,Pollo
+chicken_wings,Alitas de pollo,proteina,Pollo
+chocolate_cake,Pastel de chocolate,otro,
+chocolate_mousse,Mousse de chocolate,otro,
+churros,Churros,carbohidrato,Harina de trigo
+clam_chowder,Sopa de almejas,proteina,
+club_sandwich,Sándwich club,carbohidrato,Harina de trigo
+crab_cakes,Tortitas de cangrejo,proteina,
+creme_brulee,Crème brûlée,lacteo,Leche fresca entera
+croque_madame,Croque madame,carbohidrato,Harina de trigo
+cup_cakes,Cupcakes,otro,
+deviled_eggs,Huevos rellenos,proteina,Huevo
+donuts,Donas,otro,
+dumplings,Dumplings,carbohidrato,Harina de trigo
+edamame,Edamame,proteina,Haba seca
+eggs_benedict,Huevos benedictinos,proteina,Huevo
+escargots,Caracoles,proteina,
+falafel,Falafel,proteina,Garbanzo
+filet_mignon,Filete mignon,proteina,Carne de res
+fish_and_chips,Pescado con papas fritas,proteina,Jurel
+foie_gras,Foie gras,proteina,Hígado de pollo
+french_fries,Papas fritas,carbohidrato,Papa blanca
+french_onion_soup,Sopa de cebolla,vegetal,Cebolla
+french_toast,Tostada francesa,carbohidrato,Harina de trigo
+fried_calamari,Calamares fritos,proteina,
+fried_rice,Arroz frito,carbohidrato,Arroz blanco
+frozen_yogurt,Yogur helado,lacteo,Yogurt
+garlic_bread,Pan con ajo,carbohidrato,Harina de trigo
+gnocchi,Ñoquis,carbohidrato,Papa blanca
+greek_salad,Ensalada griega,vegetal,Tomate
+grilled_cheese_sandwich,Sándwich de queso a la plancha,lacteo,Queso fresco
+grilled_salmon,Salmón a la parrilla,proteina,Caballa
+guacamole,Guacamole,fruta,Palta
+gyoza,Gyoza,carbohidrato,Harina de trigo
+hamburger,Hamburguesa,proteina,Carne de res
+hot_and_sour_soup,Sopa agripicante,proteina,
+hot_dog,Hot dog,proteina,Cerdo
+huevos_rancheros,Huevos rancheros,proteina,Huevo
+hummus,Hummus,proteina,Garbanzo
+ice_cream,Helado,lacteo,Leche fresca entera
+lasagna,Lasaña,carbohidrato,Fideo
+lobster_bisque,Crema de langosta,proteina,
+lobster_roll_sandwich,Sándwich de langosta,proteina,
+macaroni_and_cheese,Macarrones con queso,carbohidrato,Fideo
+macarons,Macarons,otro,
+miso_soup,Sopa miso,otro,
+mussels,Mejillones,proteina,
+nachos,Nachos,carbohidrato,Maíz amarillo
+omelette,Tortilla de huevo,proteina,Huevo
+onion_rings,Aros de cebolla,vegetal,Cebolla
+oysters,Ostras,proteina,
+pad_thai,Pad thai,carbohidrato,Fideo
+paella,Paella,carbohidrato,Arroz blanco
+pancakes,Panqueques,carbohidrato,Harina de trigo
+panna_cotta,Panna cotta,lacteo,Leche fresca entera
+peking_duck,Pato pekinés,proteina,Pollo
+pho,Pho,carbohidrato,Fideo
+pizza,Pizza,carbohidrato,Harina de trigo
+pork_chop,Chuleta de cerdo,proteina,Cerdo
+poutine,Poutine,carbohidrato,Papa blanca
+prime_rib,Costilla de res,proteina,Carne de res
+pulled_pork_sandwich,Sándwich de cerdo deshebrado,proteina,Cerdo
+ramen,Ramen,carbohidrato,Fideo
+ravioli,Ravioles,carbohidrato,Fideo
+red_velvet_cake,Pastel red velvet,otro,
+risotto,Risotto,carbohidrato,Arroz blanco
+samosa,Samosa,carbohidrato,Papa blanca
+sashimi,Sashimi,proteina,Bonito
+scallops,Vieiras,proteina,
+seaweed_salad,Ensalada de algas,vegetal,
+shrimp_and_grits,Camarones con sémola,proteina,
+spaghetti_bolognese,Espagueti a la boloñesa,carbohidrato,Fideo
+spaghetti_carbonara,Espagueti a la carbonara,carbohidrato,Fideo
+spring_rolls,Rollitos primavera,vegetal,Repollo
+steak,Bistec,proteina,Carne de res
+strawberry_shortcake,Pastel de fresas,fruta,Fresa
+sushi,Sushi,carbohidrato,Arroz blanco
+tacos,Tacos,carbohidrato,Maíz amarillo
+takoyaki,Takoyaki,proteina,
+tiramisu,Tiramisú,otro,
+tuna_tartare,Tartar de atún,proteina,Atún
+waffles,Waffles,carbohidrato,Harina de trigo

@@ -1,0 +1,9 @@
+# Dependencias para desarrollo y pruebas (las usa también el CI).
+# NO incluye torch ni transformers: las pruebas usan un clasificador falso
+# para que el CI sea rápido y no descargue el modelo.
+fastapi==0.115.0
+uvicorn==0.30.6
+python-multipart==0.0.9
+pillow==10.4.0
+httpx==0.27.2
+pytest==8.3.3

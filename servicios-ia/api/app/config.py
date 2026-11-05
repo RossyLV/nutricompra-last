@@ -78,6 +78,8 @@ CHAT_MENSAJE_MAX_LARGO: int = 500
 CHAT_HISTORIAL_MAX_MENSAJES: int = 10
 CHAT_HISTORIAL_MAX_LARGO: int = 2000
 ROLES_CHAT: tuple[str, ...] = ("user", "assistant")
+# Personalización: cuántos alimentos de cada lista se le cuentan al modelo (para no inflar la consulta).
+CHAT_PERFIL_MAX_ALIMENTOS: int = 10
 
 # --- Constantes fijas del dominio ---
 # Las 5 categorías que usa la aplicación para el balance nutricional.
